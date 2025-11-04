@@ -1,0 +1,867 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Archery Game</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+            -webkit-touch-callout: none;
+            -webkit-user-select: none;
+            user-select: none;
+        }
+        
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #87CEEB, #98FB98);
+            overflow: hidden;
+            touch-action: none;
+            width: 100vw;
+            height: 100vh;
+        }
+        
+        .game-container {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+        }
+        
+        #gameCanvas {
+            background: linear-gradient(to bottom, #87CEEB 60%, #228B22 40%);
+            display: block;
+            cursor: crosshair;
+            width: 100%;
+            height: 100%;
+        }
+        
+        .ui-panel {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background: rgba(255, 255, 255, 0.95);
+            padding: 12px;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+            border: 2px solid #8B4513;
+            z-index: 10;
+        }
+        
+        .stats {
+            margin-bottom: 8px;
+        }
+        
+        .stat-item {
+            margin: 4px 0;
+            color: #2F4F4F;
+            font-weight: bold;
+        }
+        
+        .power-meter {
+            width: 120px;
+            height: 15px;
+            background: #ddd;
+            border-radius: 8px;
+            margin-top: 8px;
+            overflow: hidden;
+            border: 2px solid #8B4513;
+        }
+        
+        .power-fill {
+            height: 100%;
+            background: linear-gradient(to right, #4CAF50, #FF9800, #F44336);
+            width: 0%;
+            transition: width 0.1s;
+        }
+        
+        .instructions {
+            position: absolute;
+            bottom: 10px;
+            left: 10px;
+            background: rgba(255, 255, 255, 0.95);
+            padding: 12px;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+            border: 2px solid #8B4513;
+            max-width: 280px;
+            z-index: 10;
+        }
+        
+        .instructions h3 {
+            color: #8B4513;
+            margin-bottom: 8px;
+            text-align: center;
+        }
+        
+        .instructions ul {
+            list-style-type: none;
+            padding: 0;
+        }
+        
+        .instructions li {
+            margin: 6px 0;
+            color: #2F4F4F;
+        }
+        
+        .game-over {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(255, 255, 255, 0.98);
+            padding: 25px;
+            border-radius: 15px;
+            text-align: center;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.4);
+            border: 3px solid #8B4513;
+            display: none;
+            z-index: 100;
+            width: 90%;
+            max-width: 300px;
+        }
+        
+        .game-over h2 {
+            color: #8B4513;
+            margin-bottom: 15px;
+        }
+        
+        .final-score {
+            color: #2F4F4F;
+            margin: 12px 0;
+        }
+        
+        .win-screen {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(255, 255, 255, 0.98);
+            padding: 25px;
+            border-radius: 15px;
+            text-align: center;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.4);
+            border: 3px solid #4CAF50;
+            display: none;
+            z-index: 100;
+            width: 90%;
+            max-width: 300px;
+        }
+        
+        .win-screen h2 {
+            color: #4CAF50;
+            margin-bottom: 15px;
+        }
+        
+        .win-score {
+            color: #2F4F4F;
+            margin: 12px 0;
+        }
+        
+        .restart-btn {
+            background: linear-gradient(135deg, #8B4513, #A0522D);
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            margin-top: 12px;
+            transition: transform 0.2s;
+            font-size: 16px;
+            width: 100%;
+        }
+        
+        .restart-btn:hover {
+            transform: scale(1.05);
+        }
+        
+        .target-hit {
+            position: absolute;
+            font-weight: bold;
+            color: #FFD700;
+            animation: floatUp 1s ease-out;
+            z-index: 50;
+            pointer-events: none;
+        }
+        
+        .credits {
+            position: absolute;
+            bottom: 5px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: white;
+            font-weight: bold;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+            background: rgba(0, 0, 0, 0.3);
+            padding: 4px 12px;
+            border-radius: 8px;
+            z-index: 10;
+        }
+        
+        .mobile-controls {
+            display: none;
+            position: absolute;
+            bottom: 80px;
+            right: 20px;
+            background: rgba(255, 255, 255, 0.9);
+            padding: 10px;
+            border-radius: 10px;
+            text-align: center;
+            border: 2px solid #8B4513;
+            z-index: 10;
+        }
+        
+        .shoot-btn {
+            background: linear-gradient(135deg, #4CAF50, #45a049);
+            color: white;
+            border: none;
+            padding: 15px 25px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+        }
+        
+        @keyframes floatUp {
+            0% { transform: translateY(0); opacity: 1; }
+            100% { transform: translateY(-50px); opacity: 0; }
+        }
+
+        /* Mobile Responsive */
+        @media (max-width: 768px) {
+            .ui-panel {
+                top: 5px;
+                left: 5px;
+                padding: 8px;
+            }
+            
+            .stat-item {
+                font-size: 14px;
+            }
+            
+            .power-meter {
+                width: 100px;
+                height: 12px;
+            }
+            
+            .instructions {
+                bottom: 5px;
+                left: 5px;
+                padding: 8px;
+                max-width: 200px;
+            }
+            
+            .instructions h3 {
+                font-size: 14px;
+            }
+            
+            .instructions li {
+                font-size: 12px;
+            }
+            
+            .credits {
+                font-size: 12px;
+            }
+            
+            .mobile-controls {
+                display: block;
+            }
+            
+            .game-over, .win-screen {
+                padding: 20px;
+                width: 85%;
+            }
+            
+            .game-over h2, .win-screen h2 {
+                font-size: 24px;
+            }
+            
+            .final-score, .win-score {
+                font-size: 18px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .ui-panel {
+                padding: 6px;
+            }
+            
+            .stat-item {
+                font-size: 12px;
+            }
+            
+            .instructions {
+                max-width: 180px;
+            }
+            
+            .instructions li {
+                font-size: 11px;
+            }
+            
+            .mobile-controls {
+                bottom: 60px;
+                right: 10px;
+            }
+            
+            .shoot-btn {
+                padding: 12px 20px;
+                font-size: 14px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <canvas id="gameCanvas"></canvas>
+        
+        <div class="ui-panel">
+            <div class="stats">
+                <div class="stat-item" id="score">Score: 0</div>
+                <div class="stat-item" id="arrows">Arrows Left: 8</div>
+            </div>
+            <div class="power-meter">
+                <div class="power-fill" id="powerFill"></div>
+            </div>
+            <div class="stat-item" id="powerText">Power: 0%</div>
+        </div>
+        
+        <div class="instructions">
+            <h3>Instructions</h3>
+            <ul>
+                <li>🎯 Aim with mouse/touch</li>
+                <li>🖱️ Hold to charge power</li>
+                <li>🚀 Release to shoot</li>
+                <li>🏹 Total 8 arrows</li>
+                <li>⭐ 1 point per target</li>
+                <li>🎯 6 Moving Targets!</li>
+            </ul>
+        </div>
+        
+        <div class="mobile-controls">
+            <div>Tap & Hold to Shoot</div>
+            <button class="shoot-btn" id="shootBtn">FIRE</button>
+        </div>
+        
+        <div class="game-over" id="gameOver">
+            <h2>Game Over!</h2>
+            <div class="final-score" id="finalScore">Final Score: 0</div>
+            <button class="restart-btn" onclick="restartGame()">Play Again</button>
+        </div>
+        
+        <div class="win-screen" id="winScreen">
+            <h2>You Win! 🎉</h2>
+            <div class="win-score" id="winScore">Final Score: 0</div>
+            <button class="restart-btn" onclick="restartGame()">Play Again</button>
+        </div>
+        
+        <div class="credits">Made by M.Y Games</div>
+    </div>
+
+    <script>
+        // Canvas setup
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        
+        function setupCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+        setupCanvas();
+
+        // Game variables
+        let score = 0;
+        let arrowsRemaining = 8;
+        let gameState = 'aiming'; // aiming, charging, shooting, gameOver, win
+        let power = 0;
+        const maxPower = 100;
+        let powerIncreaseSpeed = 2;
+        let isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+
+        // Bow properties
+        const bow = {
+            x: isMobile ? 80 : 150,
+            y: canvas.height / 2,
+            width: isMobile ? 60 : 80,
+            height: isMobile ? 15 : 20,
+            angle: 0
+        };
+
+        // Arrow properties
+        const arrow = {
+            x: bow.x,
+            y: bow.y,
+            speed: 0,
+            angle: 0,
+            flying: false,
+            length: isMobile ? 30 : 40
+        };
+
+        // Targets - 6 TARGETS ALL MOVING VERTICALLY
+        const targets = [];
+
+        // Check if all targets are hit
+        function checkWin() {
+            for (let target of targets) {
+                if (!target.hit) {
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        // Win screen show karein
+        function showWinScreen() {
+            gameState = 'win';
+            document.getElementById('winScore').textContent = `Final Score: ${score}`;
+            document.getElementById('winScreen').style.display = 'block';
+        }
+
+        // Game over function update karein
+        function gameOver() {
+            gameState = 'gameOver';
+            document.getElementById('finalScore').textContent = `Final Score: ${score}`;
+            document.getElementById('gameOver').style.display = 'block';
+        }
+
+        // Restart game function update karein
+        function restartGame() {
+            score = 0;
+            arrowsRemaining = 8;
+            gameState = 'aiming';
+            power = 0;
+            arrow.flying = false;
+            createTargets();
+            updateUI();
+            document.getElementById('gameOver').style.display = 'none';
+            document.getElementById('winScreen').style.display = 'none';
+        }
+
+        // Create 6 targets ALL MOVING VERTICALLY
+        function createTargets() {
+            targets.length = 0;
+            
+            // 6 MOVING TARGETS with different positions and speeds
+            targets.push(
+                {
+                    x: canvas.width - 120,
+                    originalY: canvas.height * 0.2,
+                    y: canvas.height * 0.2,
+                    radius: 22,
+                    hit: false,
+                    color: '#FF0000', // Red
+                    moving: true,
+                    speed: 1.6,
+                    direction: 1,
+                    movementRange: 100
+                },
+                {
+                    x: canvas.width - 200,
+                    originalY: canvas.height * 0.3,
+                    y: canvas.height * 0.3,
+                    radius: 24,
+                    hit: false,
+                    color: '#00FF00', // Green
+                    moving: true,
+                    speed: 1.8,
+                    direction: -1,
+                    movementRange: 120
+                },
+                {
+                    x: canvas.width - 280,
+                    originalY: canvas.height * 0.4,
+                    y: canvas.height * 0.4,
+                    radius: 26,
+                    hit: false,
+                    color: '#0000FF', // Blue
+                    moving: true,
+                    speed: 2.0,
+                    direction: 1,
+                    movementRange: 140
+                },
+                {
+                    x: canvas.width - 160,
+                    originalY: canvas.height * 0.5,
+                    y: canvas.height * 0.5,
+                    radius: 23,
+                    hit: false,
+                    color: '#FFA500', // Orange
+                    moving: true,
+                    speed: 1.4,
+                    direction: -1,
+                    movementRange: 110
+                },
+                {
+                    x: canvas.width - 240,
+                    originalY: canvas.height * 0.6,
+                    y: canvas.height * 0.6,
+                    radius: 25,
+                    hit: false,
+                    color: '#800080', // Purple
+                    moving: true,
+                    speed: 1.9,
+                    direction: 1,
+                    movementRange: 130
+                },
+                {
+                    x: canvas.width - 180,
+                    originalY: canvas.height * 0.7,
+                    y: canvas.height * 0.7,
+                    radius: 21,
+                    hit: false,
+                    color: '#FFFF00', // Yellow
+                    moving: true,
+                    speed: 1.5,
+                    direction: -1,
+                    movementRange: 90
+                }
+            );
+        }
+
+        // Update moving targets
+        function updateTargets() {
+            targets.forEach(target => {
+                if (!target.hit && target.moving) {
+                    // Move target up and down
+                    target.y += target.speed * target.direction;
+                    
+                    // Reverse direction when hitting movement boundaries
+                    if (target.y >= target.originalY + target.movementRange) {
+                        target.direction = -1;
+                    } else if (target.y <= target.originalY - target.movementRange) {
+                        target.direction = 1;
+                    }
+                }
+            });
+        }
+
+        // Draw bow
+        function drawBow() {
+            ctx.save();
+            ctx.translate(bow.x, bow.y);
+            ctx.rotate(bow.angle);
+            
+            // Bow body
+            ctx.fillStyle = '#8B4513';
+            ctx.fillRect(-bow.width/2, -bow.height/2, bow.width, bow.height);
+            
+            // Bow curve
+            ctx.strokeStyle = '#8B4513';
+            ctx.lineWidth = isMobile ? 6 : 8;
+            ctx.beginPath();
+            ctx.arc(0, 0, isMobile ? 25 : 35, Math.PI/6, 5*Math.PI/6);
+            ctx.stroke();
+            
+            // Bow string when not shooting
+            if (!arrow.flying && gameState !== 'charging') {
+                ctx.strokeStyle = '#000';
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.moveTo(isMobile ? -20 : -30, isMobile ? -20 : -25);
+                ctx.lineTo(isMobile ? -20 : -30, isMobile ? 20 : 25);
+                ctx.stroke();
+            }
+            
+            ctx.restore();
+        }
+
+        // Draw arrow
+        function drawArrow() {
+            if (arrow.flying || gameState === 'charging') {
+                ctx.save();
+                ctx.translate(arrow.x, arrow.y);
+                ctx.rotate(arrow.angle);
+                
+                // Arrow body
+                ctx.strokeStyle = '#8B4513';
+                ctx.lineWidth = isMobile ? 3 : 4;
+                ctx.beginPath();
+                ctx.moveTo(0, 0);
+                ctx.lineTo(arrow.length, 0);
+                ctx.stroke();
+                
+                // Arrow head
+                ctx.fillStyle = '#2F4F4F';
+                ctx.beginPath();
+                ctx.moveTo(arrow.length, 0);
+                ctx.lineTo(arrow.length - (isMobile ? 12 : 15), isMobile ? -6 : -8);
+                ctx.lineTo(arrow.length - (isMobile ? 12 : 15), isMobile ? 6 : 8);
+                ctx.closePath();
+                ctx.fill();
+                
+                // Arrow feathers
+                ctx.fillStyle = '#FF6B6B';
+                ctx.beginPath();
+                ctx.moveTo(5, 0);
+                ctx.lineTo(isMobile ? 12 : 15, isMobile ? -5 : -6);
+                ctx.lineTo(isMobile ? 12 : 15, isMobile ? 5 : 6);
+                ctx.closePath();
+                ctx.fill();
+                
+                ctx.restore();
+            }
+        }
+
+        // Draw all targets
+        function drawTargets() {
+            targets.forEach(target => {
+                if (!target.hit) {
+                    const centerX = target.x;
+                    const centerY = target.y;
+                    const outerRadius = target.radius;
+                    
+                    // Outer circle
+                    ctx.fillStyle = target.color;
+                    ctx.beginPath();
+                    ctx.arc(centerX, centerY, outerRadius, 0, Math.PI * 2);
+                    ctx.fill();
+                    
+                    // Middle circle
+                    ctx.fillStyle = 'white';
+                    ctx.beginPath();
+                    ctx.arc(centerX, centerY, outerRadius * 0.7, 0, Math.PI * 2);
+                    ctx.fill();
+                    
+                    // Inner circle
+                    ctx.fillStyle = target.color;
+                    ctx.beginPath();
+                    ctx.arc(centerX, centerY, outerRadius * 0.4, 0, Math.PI * 2);
+                    ctx.fill();
+                    
+                    // Bullseye
+                    ctx.fillStyle = 'gold';
+                    ctx.beginPath();
+                    ctx.arc(centerX, centerY, outerRadius * 0.2, 0, Math.PI * 2);
+                    ctx.fill();
+                    
+                    // Update target position for collision detection
+                    target.collisionX = centerX;
+                    target.collisionY = centerY;
+                    target.collisionRadius = outerRadius;
+                }
+            });
+        }
+
+        // Check collision
+        function checkCollision() {
+            for (let target of targets) {
+                if (!target.hit && target.collisionX) {
+                    const dx = arrow.x - target.collisionX;
+                    const dy = arrow.y - target.collisionY;
+                    const distance = Math.sqrt(dx * dx + dy * dy);
+                    
+                    if (distance < target.collisionRadius) {
+                        target.hit = true;
+                        score++;
+                        showHitAnimation(target.collisionX, target.collisionY);
+                        updateUI();
+                        return true;
+                    }
+                }
+            }
+            return false;
+        }
+
+        // Show hit animation
+        function showHitAnimation(x, y) {
+            const hitText = document.createElement('div');
+            hitText.className = 'target-hit';
+            hitText.textContent = '+1 🎯';
+            hitText.style.left = x + 'px';
+            hitText.style.top = y + 'px';
+            hitText.style.fontSize = isMobile ? '18px' : '24px';
+            document.body.appendChild(hitText);
+            
+            setTimeout(() => {
+                if (document.body.contains(hitText)) {
+                    document.body.removeChild(hitText);
+                }
+            }, 1000);
+        }
+
+        // Update UI
+        function updateUI() {
+            document.getElementById('score').textContent = `Score: ${score}`;
+            document.getElementById('arrows').textContent = `Arrows Left: ${arrowsRemaining}`;
+            document.getElementById('powerText').textContent = `Power: ${Math.round(power)}%`;
+            document.getElementById('powerFill').style.width = power + '%';
+        }
+
+        // Mouse events for PC
+        canvas.addEventListener('mousemove', (e) => {
+            if (isMobile) return;
+            
+            const rect = canvas.getBoundingClientRect();
+            const mouseX = e.clientX - rect.left;
+            const mouseY = e.clientY - rect.top;
+            
+            bow.angle = Math.atan2(mouseY - bow.y, mouseX - bow.x);
+            
+            if (!arrow.flying) {
+                arrow.angle = bow.angle;
+                arrow.x = bow.x + Math.cos(bow.angle) * (isMobile ? 20 : 30);
+                arrow.y = bow.y + Math.sin(bow.angle) * (isMobile ? 20 : 30);
+            }
+        });
+
+        canvas.addEventListener('mousedown', (e) => {
+            if (isMobile) return;
+            if (e.button === 0 && gameState === 'aiming' && arrowsRemaining > 0) {
+                gameState = 'charging';
+                power = 0;
+            }
+        });
+
+        canvas.addEventListener('mouseup', (e) => {
+            if (isMobile) return;
+            if (e.button === 0 && gameState === 'charging' && arrowsRemaining > 0) {
+                shootArrow();
+            }
+        });
+
+        // Touch events for Mobile
+        canvas.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            if (gameState === 'aiming' && arrowsRemaining > 0) {
+                gameState = 'charging';
+                power = 0;
+            }
+        });
+
+        canvas.addEventListener('touchmove', (e) => {
+            e.preventDefault();
+            const rect = canvas.getBoundingClientRect();
+            const touch = e.touches[0];
+            const touchX = touch.clientX - rect.left;
+            const touchY = touch.clientY - rect.top;
+            
+            bow.angle = Math.atan2(touchY - bow.y, touchX - bow.x);
+            
+            if (!arrow.flying) {
+                arrow.angle = bow.angle;
+                arrow.x = bow.x + Math.cos(bow.angle) * (isMobile ? 20 : 30);
+                arrow.y = bow.y + Math.sin(bow.angle) * (isMobile ? 20 : 30);
+            }
+        });
+
+        canvas.addEventListener('touchend', (e) => {
+            e.preventDefault();
+            if (gameState === 'charging' && arrowsRemaining > 0) {
+                shootArrow();
+            }
+        });
+
+        // Mobile shoot button
+        document.getElementById('shootBtn').addEventListener('mousedown', (e) => {
+            if (gameState === 'aiming' && arrowsRemaining > 0) {
+                gameState = 'charging';
+                power = 0;
+            }
+        });
+
+        document.getElementById('shootBtn').addEventListener('mouseup', (e) => {
+            if (gameState === 'charging' && arrowsRemaining > 0) {
+                shootArrow();
+            }
+        });
+
+        document.getElementById('shootBtn').addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            if (gameState === 'aiming' && arrowsRemaining > 0) {
+                gameState = 'charging';
+                power = 0;
+            }
+        });
+
+        document.getElementById('shootBtn').addEventListener('touchend', (e) => {
+            e.preventDefault();
+            if (gameState === 'charging' && arrowsRemaining > 0) {
+                shootArrow();
+            }
+        });
+
+        // Shoot arrow function
+        function shootArrow() {
+            gameState = 'shooting';
+            arrow.speed = power / (isMobile ? 4 : 5);
+            arrow.flying = true;
+            arrowsRemaining--;
+            updateUI();
+        }
+
+        // Game loop
+        function gameLoop() {
+            // Clear canvas
+            ctx.fillStyle = 'rgba(135, 206, 235, 0.1)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            // Draw background elements
+            ctx.fillStyle = '#228B22';
+            ctx.fillRect(0, canvas.height * 0.7, canvas.width, canvas.height * 0.3);
+            
+            // Update power when charging
+            if (gameState === 'charging') {
+                power = Math.min(power + powerIncreaseSpeed, maxPower);
+                updateUI();
+            }
+            
+            // Update moving targets
+            updateTargets();
+            
+            // Update arrow position when flying
+            if (arrow.flying) {
+                arrow.x += arrow.speed * Math.cos(arrow.angle);
+                arrow.y += arrow.speed * Math.sin(arrow.angle);
+                
+                // Check collisions
+                if (checkCollision()) {
+                    arrow.flying = false;
+                }
+                
+                // Check if arrow is out of bounds
+                if (arrow.x < 0 || arrow.x > canvas.width || arrow.y < 0 || arrow.y > canvas.height) {
+                    arrow.flying = false;
+                }
+                
+                // Reset after arrow stops
+                if (!arrow.flying) {
+                    gameState = 'aiming';
+                    arrow.x = bow.x + Math.cos(bow.angle) * (isMobile ? 20 : 30);
+                    arrow.y = bow.y + Math.sin(bow.angle) * (isMobile ? 20 : 30);
+                    
+                    // Check win condition
+                    if (checkWin()) {
+                        setTimeout(showWinScreen, 500);
+                    }
+                    // Check game over condition
+                    else if (arrowsRemaining <= 0) {
+                        setTimeout(gameOver, 500);
+                    }
+                }
+            }
+            
+            // Draw game objects
+            drawTargets();
+            drawBow();
+            drawArrow();
+            
+            requestAnimationFrame(gameLoop);
+        }
+
+        // Handle window resize
+        window.addEventListener('resize', () => {
+            setupCanvas();
+            bow.y = canvas.height / 2;
+            bow.x = isMobile ? 80 : 150;
+            createTargets();
+        });
+
+        // Initialize game
+        createTargets();
+        updateUI();
+        gameLoop();
+    </script>
+</body>
+</html>
